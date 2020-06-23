@@ -9,7 +9,7 @@ int main(int argc, char **argv)
 {
     if (argc < 2)
     {
-        std::cerr << "At least one parameter for choosing the euristic" << std::endl;
+        std::cerr << "At least one parameter for choosing the heuristic" << std::endl;
         return 1;
     }
 
@@ -28,9 +28,9 @@ int main(int argc, char **argv)
     //matrice che contiene le distanze da ogni nodo ad ogni altro nodo
     double **distance_matrix = get_distance_matrix(depots, customers, coordinate_matrix);
 
-    int euristic = argv[1][0] - '0';
+    int heuristic = argv[1][0] - '0';
     double best = 0;
-    switch (euristic)
+    switch (heuristic)
     {
     case 0:
         best = ES_1_1(depots, customers, vehicles, distance_matrix, 1);
