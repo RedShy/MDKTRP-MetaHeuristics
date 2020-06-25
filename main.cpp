@@ -3,6 +3,7 @@
 #include "individual.h"
 #include "1+1-ES.h"
 #include "mu+lambda-ES.h"
+#include "mu_comma_lambda-ES.h"
 using namespace std;
 
 int main(int argc, char **argv)
@@ -16,8 +17,8 @@ int main(int argc, char **argv)
     int depots = 0;
     int customers = 0;
     double **coordinate_matrix;
-    string file = "./dat/pr10.txt";
-    int vehicles = 35;
+    string file = "./dat/25x4-1.txt";
+    int vehicles = 10;
 
     //read_file_cordeau(file, depots, vehicles, customers, coordinate_matrix);
     read_file_ruiz(file, depots, customers, coordinate_matrix);
@@ -33,10 +34,12 @@ int main(int argc, char **argv)
     switch (heuristic)
     {
     case 0:
-        best = ES_1_1(depots, customers, vehicles, distance_matrix, 1);
-        for (int i = 0; i < 1600000; i++)
+        best = ES_1_1(depots, customers, vehicles, distance_matrix, 80000);
+        cout << "BEST: " << best << "\n";
+        for (int i = 1; i < 1600000; i++)
         {
-            double result = ES_1_1(depots, customers, vehicles, distance_matrix, 1);
+            //cout<<"TENTATIVO: "<<i<<endl;
+            double result = ES_1_1(depots, customers, vehicles, distance_matrix, 80000);
             if (result < best)
             {
                 best = result;
@@ -45,18 +48,35 @@ int main(int argc, char **argv)
         }
         break;
     case 1:
-        const int mu = 5;
-        const int lambda = 250;
-        best = ES_mu_lambda(depots, customers, vehicles, distance_matrix, 1, mu, lambda);
-        for (int i = 0; i < 16000; i++)
+        best = ES_mu_plus_lambda(depots, customers, vehicles, distance_matrix, 5000, 15, 100);
+        cout << "BEST: " << best << "\n";
+        for (int i = 1; i < 16000; i++)
         {
-            double result = ES_mu_lambda(depots, customers, vehicles, distance_matrix, 1, mu, lambda);
+            //cout<<"TENTATIVO: "<<i<<endl;
+            double result = ES_mu_plus_lambda(depots, customers, vehicles, distance_matrix, 5000, 15, 100);
             if (result < best)
             {
                 best = result;
                 cout << "BEST: " << best << "\n";
             }
         }
+        break;
+    case 2:
+        best = ES_mu_comma_lambda(depots, customers, vehicles, distance_matrix, 5000, 15, 200);
+        cout << "BEST: " << best << "\n";
+        for (int i = 1; i < 16000; i++)
+        {
+            //cout<<"TENTATIVO: "<<i<<endl;
+            double result = ES_mu_comma_lambda(depots, customers, vehicles, distance_matrix, 5000, 15, 200);
+            if (result < best)
+            {
+                best = result;
+                cout << "BEST: " << best << "\n";
+            }
+        }
+        break;
+    case 3:
+        //TODO GA
         break;
     }
 

@@ -3,7 +3,7 @@
 
 #include "individual.h"
 
-double ES_mu_lambda(const int depots, const int customers, const int vehicles, const double *const *const distance_matrix, const int N, const int mu, const int lambda)
+double ES_mu_plus_lambda(const int depots, const int customers, const int vehicles, const double *const *const distance_matrix, const int N, const int mu, const int lambda)
 {
     double best_cost = std::numeric_limits<double>::max();
 
@@ -12,14 +12,13 @@ double ES_mu_lambda(const int depots, const int customers, const int vehicles, c
     individuals.assign(mu + lambda, Individual(vehicles, depots, customers, distance_matrix, mt));
 
     //inizializzazione dei parents
-    for (int p = 0; p < mu; p++)
+    for (Individual& i : individuals)
     {
-        individuals[p].random_inizialize();
-        individuals[p].calculate_cost();
-
-        if (individuals[p].get_cost() < best_cost)
+        i.random_inizialize();
+        i.calculate_cost();
+        if (i.get_cost() < best_cost)
         {
-            best_cost = individuals[p].get_cost();
+            best_cost = i.get_cost();
             //std::cout << "Improved: " << best_cost << "\n";
         }
     }
@@ -35,9 +34,10 @@ double ES_mu_lambda(const int depots, const int customers, const int vehicles, c
     }
 
     std::uniform_int_distribution<int> random_parent(0, mu - 1);
-
+    unsigned last_improved_generation = 0;
     const int generations = 14000 * N;
-    for (int g = 0; g < generations; g++)
+    unsigned g = 0;
+    while(true)
     {
         int added_children = 0;
 
@@ -63,6 +63,7 @@ double ES_mu_lambda(const int depots, const int customers, const int vehicles, c
                 {
                     best_cost = child.get_cost();
                     //std::cout << "Child improved: " << best_cost << "\n";
+                    last_improved_generation = g;
                 }
             }
         }
@@ -83,6 +84,13 @@ double ES_mu_lambda(const int depots, const int customers, const int vehicles, c
         //     // }
         //     // std::cout<<"\n";
         // }
+
+        g++;
+        //se dopo N generazioni non c'è stato un miglioramento, esci dalla ricerca
+        if(g - last_improved_generation >= N)
+        {
+            return best_cost;
+        }
     }
 }
 
