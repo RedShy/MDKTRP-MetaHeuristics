@@ -255,7 +255,7 @@ public:
 		cost = total_cost;
 	}
 
-	void mutate()
+	void swap2()
 	{
 		for (int k = 0; k < 3; k++)
 		{

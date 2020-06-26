@@ -17,7 +17,8 @@ double ES_1_1(const int depots, const int customers, const int vehicles, const d
     while (true)
     {
         Individual child(parent);
-        child.mutate();
+        //child.swap2();
+        child.scrumble();
         child.calculate_cost();
         if (child.get_cost() < parent.get_cost())
         {

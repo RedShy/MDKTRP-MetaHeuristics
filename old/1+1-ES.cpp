@@ -279,7 +279,7 @@ double test2(const int depots, const int customers, const double *const *const d
 	for (int g = 0; g < generations; g++)
 	{
 		Individual child(parent);
-		child.mutate();
+		child.swap2();
 		child.calculate_cost();
 		if (child.get_cost() < parent.get_cost())
 		{

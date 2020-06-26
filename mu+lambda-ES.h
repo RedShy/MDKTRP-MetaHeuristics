@@ -49,7 +49,8 @@ double ES_mu_plus_lambda(const int depots, const int customers, const int vehicl
 
             //genera un figlio
             Individual child(individuals[p]);
-            child.mutate();
+            //child.swap2();
+            child.scrumble();
             child.calculate_cost();
 
             //se il figlio è migliore del parent peggiore allora lo manteniamo, altrimenti lo scartiamo direttamente
