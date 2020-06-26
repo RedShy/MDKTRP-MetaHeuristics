@@ -49,7 +49,8 @@ double ES_mu_comma_lambda(const int depots, const int customers, const int vehic
 
             //genera un figlio
             children_a[i] = parents_a[p];
-            children_a[i].mutate();
+            //children_a[i].swap2();
+            children_a[i].scrumble();
             children_a[i].calculate_cost();
 
             if (children_a[i].get_cost() < best_cost)
@@ -81,7 +82,8 @@ double ES_mu_comma_lambda(const int depots, const int customers, const int vehic
 
             //genera un figlio
             Individual child(parents_a[p]);
-            child.mutate();
+            //child.swap2();
+            child.scrumble();
             child.calculate_cost();
 
             //se il figlio è migliore del figlio peggiore allora lo manteniamo, altrimenti lo scartiamo direttamente

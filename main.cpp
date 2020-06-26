@@ -17,8 +17,8 @@ int main(int argc, char **argv)
     int depots = 0;
     int customers = 0;
     double **coordinate_matrix;
-    string file = "./dat/25x4-1.txt";
-    int vehicles = 10;
+    string file = "./dat/pr10.txt";
+    int vehicles = 5;
 
     //read_file_cordeau(file, depots, vehicles, customers, coordinate_matrix);
     read_file_ruiz(file, depots, customers, coordinate_matrix);
@@ -31,6 +31,7 @@ int main(int argc, char **argv)
 
     int heuristic = argv[1][0] - '0';
     double best = 0;
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     switch (heuristic)
     {
     case 0:
@@ -38,7 +39,7 @@ int main(int argc, char **argv)
         cout << "BEST: " << best << "\n";
         for (int i = 1; i < 1600000; i++)
         {
-            //cout<<"TENTATIVO: "<<i<<endl;
+            //cout << "TENTATIVO: " << i << endl;
             double result = ES_1_1(depots, customers, vehicles, distance_matrix, 80000);
             if (result < best)
             {
@@ -52,7 +53,7 @@ int main(int argc, char **argv)
         cout << "BEST: " << best << "\n";
         for (int i = 1; i < 16000; i++)
         {
-            //cout<<"TENTATIVO: "<<i<<endl;
+            //cout << "TENTATIVO: " << i << endl;
             double result = ES_mu_plus_lambda(depots, customers, vehicles, distance_matrix, 5000, 15, 100);
             if (result < best)
             {
@@ -66,7 +67,7 @@ int main(int argc, char **argv)
         cout << "BEST: " << best << "\n";
         for (int i = 1; i < 16000; i++)
         {
-            //cout<<"TENTATIVO: "<<i<<endl;
+            //cout << "TENTATIVO: " << i << endl;
             double result = ES_mu_comma_lambda(depots, customers, vehicles, distance_matrix, 5000, 15, 200);
             if (result < best)
             {
@@ -79,6 +80,8 @@ int main(int argc, char **argv)
         //TODO GA
         break;
     }
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "[ms]" << std::endl;
 
     cout << "Finale: " << best << endl;
 
