@@ -99,7 +99,8 @@ public:
 		{
 			//scegli una seconda cella
 			unsigned second = random_cell(mt);
-			while (second == 0)
+			//la seconda cella non può essere uguale 0 e né uguale a first
+			while (second == 0 || second == first)
 			{
 				second = random_cell(mt);
 			}
@@ -141,7 +142,7 @@ public:
 		}
 		else
 		{
-			while(first == vehicles + customers - 1 || first == 0)
+			while (first == vehicles + customers - 1 || first == 0)
 			{
 				first = random_cell(mt);
 			}
@@ -153,7 +154,6 @@ public:
 				second = random_cell(mt);
 			}
 			std::shuffle(&tours[first], &tours[second + 1], mt);
-
 
 			//aggiorno la posizione degli altri depot
 			unsigned i = first;
