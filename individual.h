@@ -185,9 +185,59 @@ public:
 
 			//swap tra le tre celle
 			const unsigned tmp3 = tours[third];
-			tours[third]=tours[first];
+			tours[third] = tours[first];
 			tours[first] = tours[second];
 			tours[second] = tmp3;
+		}
+	}
+
+	void inversion()
+	{
+		std::uniform_int_distribution<unsigned> random_cell(0, vehicles + customers - 1);
+		std::uniform_int_distribution<unsigned> random_depot(0, depots - 1);
+		unsigned *const tours = this->tours;
+
+		//scegli la prima cella
+		unsigned first = random_cell(mt);
+		if (tours[first] < depots)
+		{
+			//scegli casualmente un nuovo depot
+			tours[first] = random_depot(mt);
+		}
+		else
+		{
+			//metto anche first == 0 perché se lo estrae casualmente la seconda volta può uscire 0
+			//first non può essere 0 né uguale alla fine dell'array
+			while (first == vehicles + customers - 1 || first == 0)
+			{
+				first = random_cell(mt);
+			}
+
+			//scegli una seconda cella maggiore della prima
+			unsigned second = random_cell(mt);
+			while (second <= first)
+			{
+				second = random_cell(mt);
+			}
+			//inverti questo segmento di array
+			std::reverse(&tours[first], &tours[second + 1]);
+
+			//aggiorno la posizione degli altri depot
+			unsigned i = first;
+			for (unsigned v = 1; v < vehicles; v++)
+			{
+				//controllo se il depot è nel range dell'inversione
+				if (depot_positions[v] >= first && depot_positions[v] <= second)
+				{
+					//cerco il depot all'interno dell'inversione
+					while (tours[i] >= depots)
+					{
+						i++;
+					}
+					depot_positions[v] = i;
+					i++;
+				}
+			}
 		}
 	}
 
