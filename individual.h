@@ -108,7 +108,7 @@ public:
 			//se il secondo è un depot aggiorna la posizione dei depot
 			if (tours[second] < depots)
 			{
-				unsigned i = 1;
+				unsigned i = 0;
 				while (depot_positions[i] != second)
 					i++;
 				depot_positions[i] = first;
@@ -138,6 +138,8 @@ public:
 		// const unsigned second = positions[1];
 		// const unsigned third = positions[2];
 
+		//std::sort(depot_positions, depot_positions+vehicles);
+
 		//scegli la prima cella da swappare
 		const unsigned first = random_cell(mt);
 		if (tours[first] < depots)
@@ -166,7 +168,7 @@ public:
 			//se il secondo è un depot aggiorna la posizione dei depot
 			if (tours[second] < depots)
 			{
-				unsigned i = 1;
+				unsigned i = 0;
 				while (depot_positions[i] != second)
 				{
 					i++;
@@ -177,13 +179,12 @@ public:
 			//se il terzo è un depot aggiorna la posizione dei depot
 			if (tours[third] < depots)
 			{
-				unsigned i = 1;
+				unsigned i = 0;
 				while (depot_positions[i] != third)
 					i++;
 				depot_positions[i] = second;
 			}
 
-			//swap tra le tre celle
 			const unsigned tmp3 = tours[third];
 			tours[third] = tours[first];
 			tours[first] = tours[second];
@@ -358,14 +359,128 @@ public:
 
 			index_parent++;
 		}
-		// cout << "TOURS PRIMO GENITORE\n";
-		// p1.print_tour_matrix();
+	}
 
-		// cout << "TOURS SECONDO GENITORE\n";
-		// p2.print_tour_matrix();
+	void two_point_cross_over(const Individual &p1, const Individual &p2)
+	{
+		unsigned *const tours = this->tours;
+		const unsigned *const tours_p1 = p1.tours;
+		const unsigned *const tours_p2 = p2.tours;
 
-		// cout << "TOURS DEL FIGLIO\n";
-		// print_tour_matrix();
+		std::uniform_int_distribution<unsigned> random_cell(0, vehicles + customers - 1);
+		//scegli cutting point
+		unsigned cutting_point1 = random_cell(mt);
+		while (cutting_point1 == vehicles + customers - 1)
+		{
+			cutting_point1 = random_cell(mt);
+		}
+
+		unsigned cutting_point2 = random_cell(mt);
+		while (cutting_point2 <= cutting_point1)
+		{
+			cutting_point2 = random_cell(mt);
+		}
+
+		unsigned index_child = cutting_point1;
+		for (; index_child < cutting_point2; index_child++)
+		{
+			tours[index_child] = tours_p1[index_child];
+		}
+
+		//contiamo quanti veicoli sono stati inseriti
+		unsigned vehicles_inserted = 0;
+		for (unsigned v = 0; v < vehicles; v++)
+		{
+			if (p1.depot_positions[v] >= cutting_point1 && p1.depot_positions[v] < cutting_point2)
+			{
+				//aggiorniamo la posizione dei depots del figlio
+				depot_positions[vehicles_inserted] = p1.depot_positions[v];
+
+				vehicles_inserted++;
+			}
+		}
+
+		//inserisci il resto degli elementi in ordine di apparizione del secondo genitore
+		const unsigned N = vehicles + customers;
+		unsigned index_parent = 0;
+		index_child = 0;
+		while (index_child < cutting_point1)
+		{
+			const unsigned node = tours_p2[index_parent];
+			//se è un veicolo e ancora devo inserire veicoli, lo inserisco direttamente
+			if (node < depots)
+			{
+				if (vehicles_inserted < vehicles)
+				{
+					tours[index_child] = node;
+					depot_positions[vehicles_inserted] = index_child;
+
+					index_child++;
+					vehicles_inserted++;
+				}
+			}
+			//è un customer
+			else
+			{
+				//dobbiamo capire se è stato già inserito oppure no
+				bool not_inserted = true;
+				for (unsigned i = cutting_point1; i < cutting_point2; i++)
+				{
+					if (tours[i] == node)
+					{
+						not_inserted = false;
+						break;
+					}
+				}
+				if (not_inserted)
+				{
+					tours[index_child] = node;
+					index_child++;
+				}
+			}
+
+			index_parent++;
+		}
+
+		//parte a destra della parte centrale
+		index_child = cutting_point2;
+		while (index_child < N)
+		{
+			const unsigned node = tours_p2[index_parent];
+			//se è un veicolo e ancora devo inserire veicoli, lo inserisco direttamente
+			if (node < depots)
+			{
+				if (vehicles_inserted < vehicles)
+				{
+					tours[index_child] = node;
+					depot_positions[vehicles_inserted] = index_child;
+
+					index_child++;
+					vehicles_inserted++;
+				}
+			}
+			//è un customer
+			else
+			{
+				//dobbiamo capire se è stato già inserito oppure no
+				bool not_inserted = true;
+				for (unsigned i = cutting_point1; i < cutting_point2; i++)
+				{
+					if (tours[i] == node)
+					{
+						not_inserted = false;
+						break;
+					}
+				}
+				if (not_inserted)
+				{
+					tours[index_child] = node;
+					index_child++;
+				}
+			}
+
+			index_parent++;
+		}
 	}
 
 	void calculate_cost()
@@ -456,7 +571,7 @@ public:
 		}
 
 		cost = sum;
-		//cout << "COSTO: " << cost << "\n";
+
 	}
 
 	double get_cost() const
@@ -466,7 +581,7 @@ public:
 
 	void print_tour_matrix() const
 	{
-		std::cout << "TOUR ARRAY\n";
+		//std::cout << "TOUR ARRAY\n";
 		for (unsigned i = 0; i < vehicles + customers; i++)
 		{
 			std::cout << tours[i] << " ";
