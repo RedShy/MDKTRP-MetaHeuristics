@@ -288,6 +288,86 @@ public:
 		}
 	}
 
+	void one_point_cross_over(const Individual &p1, const Individual &p2)
+	{
+		unsigned *const tours = this->tours;
+		const unsigned *const tours_p1 = p1.tours;
+		const unsigned *const tours_p2 = p2.tours;
+
+		std::uniform_int_distribution<unsigned> random_cell(0, vehicles + customers - 1);
+		//scegli cutting point
+		const unsigned cutting_point = random_cell(mt);
+
+		//copia interamente la prima metà di elementi
+		unsigned index_child = 0;
+		for (; index_child < cutting_point; index_child++)
+		{
+			tours[index_child] = tours_p1[index_child];
+		}
+
+		//contiamo quanti veicoli sono stati inseriti
+		unsigned vehicles_inserted = 0;
+		for (unsigned v = 0; v < vehicles; v++)
+		{
+			if (p1.depot_positions[v] < cutting_point)
+			{
+				//aggiorniamo la posizione dei depots del figlio
+				depot_positions[vehicles_inserted] = p1.depot_positions[v];
+
+				vehicles_inserted++;
+			}
+		}
+
+		//inserisci il resto degli elementi in ordine di apparizione del secondo genitore
+		const unsigned N = vehicles + customers;
+		unsigned index_parent = 0;
+		while (index_child < N)
+		{
+			const unsigned node = tours_p2[index_parent];
+			//se è un veicolo e ancora devo inserire veicoli, lo inserisco direttamente
+			if (node < depots)
+			{
+				if (vehicles_inserted < vehicles)
+				{
+					tours[index_child] = node;
+					depot_positions[vehicles_inserted] = index_child;
+
+					index_child++;
+					vehicles_inserted++;
+				}
+			}
+			//è un customer
+			else
+			{
+				//dobbiamo capire se è stato già inserito oppure no
+				bool not_inserted = true;
+				for (unsigned i = 0; i < cutting_point; i++)
+				{
+					if (tours[i] == node)
+					{
+						not_inserted = false;
+						break;
+					}
+				}
+				if (not_inserted)
+				{
+					tours[index_child] = node;
+					index_child++;
+				}
+			}
+
+			index_parent++;
+		}
+		// cout << "TOURS PRIMO GENITORE\n";
+		// p1.print_tour_matrix();
+
+		// cout << "TOURS SECONDO GENITORE\n";
+		// p2.print_tour_matrix();
+
+		// cout << "TOURS DEL FIGLIO\n";
+		// print_tour_matrix();
+	}
+
 	void calculate_cost()
 	{
 		const unsigned *const tours = this->tours;
@@ -418,6 +498,25 @@ public:
 	bool operator<(const Individual &o) const
 	{
 		return cost < o.cost;
+	}
+
+	bool operator==(const Individual &o) const
+	{
+		if (this == &o)
+			return true;
+
+		const unsigned N = vehicles + customers;
+		const unsigned *const tours = this->tours;
+		const unsigned *const tours_o = o.tours;
+		for (unsigned i = 0; i < N; i++)
+		{
+			if (tours[i] != tours_o[i])
+			{
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	~Individual()
