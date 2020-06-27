@@ -127,6 +127,70 @@ public:
 		}
 	}
 
+	void swap3()
+	{
+		std::uniform_int_distribution<unsigned> random_cell(0, vehicles + customers - 1);
+		std::uniform_int_distribution<unsigned> random_depot(0, depots - 1);
+		unsigned *const tours = this->tours;
+
+		// std::shuffle(positions,positions+vehicles+customers-1,mt);
+		// const unsigned first = positions[0];
+		// const unsigned second = positions[1];
+		// const unsigned third = positions[2];
+
+		//scegli la prima cella da swappare
+		const unsigned first = random_cell(mt);
+		if (tours[first] < depots)
+		{
+			//scegli casualmente un nuovo depot
+			tours[first] = random_depot(mt);
+		}
+		else
+		{
+			//scegli una seconda cella
+			unsigned second = random_cell(mt);
+			//la seconda cella non può essere uguale 0 e né uguale a first
+			while (second == 0 || second == first)
+			{
+				second = random_cell(mt);
+			}
+
+			//scegli una terza cella
+			unsigned third = random_cell(mt);
+			//la terza cella non può essere uguale 0, né uguale a first, né a second
+			while (third == 0 || third == first || third == second)
+			{
+				third = random_cell(mt);
+			}
+
+			//se il secondo è un depot aggiorna la posizione dei depot
+			if (tours[second] < depots)
+			{
+				unsigned i = 1;
+				while (depot_positions[i] != second)
+				{
+					i++;
+				}
+				depot_positions[i] = first;
+			}
+
+			//se il terzo è un depot aggiorna la posizione dei depot
+			if (tours[third] < depots)
+			{
+				unsigned i = 1;
+				while (depot_positions[i] != third)
+					i++;
+				depot_positions[i] = second;
+			}
+
+			//swap tra le tre celle
+			const unsigned tmp3 = tours[third];
+			tours[third]=tours[first];
+			tours[first] = tours[second];
+			tours[second] = tmp3;
+		}
+	}
+
 	void scrumble()
 	{
 		std::uniform_int_distribution<unsigned> random_cell(0, vehicles + customers - 1);
