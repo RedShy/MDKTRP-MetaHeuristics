@@ -817,69 +817,107 @@ public:
 		unsigned index_p1 = 0;
 		unsigned index_p2 = 0;
 		unsigned v = 0;
-		unsigned *index_parent;
-		const unsigned *tours_parent;
+
+		const unsigned l = customers+depots;
+		bool * customers_not_inserted = new bool[l];
+		for(unsigned i = depots; i<l; i++)
+		{
+			customers_not_inserted[i] = true;
+		}
+
 		for (unsigned i = 0; i < N; i++)
 		{
 			if (random_bit(mt) == 0)
 			{
-				index_parent = &index_p1;
-				tours_parent = p1.tours;
-			}
-			else
-			{
-				index_parent = &index_p2;
-				tours_parent = p2.tours;
-			}
-
-			//in posizione i devo mettere un valore del parent
-			while (*index_parent < N)
-			{
-				if (tours_parent[*index_parent] < depots)
+				//in posizione i devo mettere un valore del parent
+				while (index_p1 < N)
 				{
-					if (v < vehicles)
+					if (p1.tours[index_p1] < depots)
 					{
-						tours[i] = tours_parent[*index_parent];
-						(*index_parent)++;
-
-						depot_positions[v] = i;
-						v++;
-						break;
-					}
-				}
-				else
-				{
-					bool not_inserted = true;
-					for (unsigned j = 0; j <= i; j++)
-					{
-						if (tours[j] == tours_parent[*index_parent])
+						if (v < vehicles)
 						{
-							not_inserted = false;
+							tours[i] = p1.tours[index_p1];
+							index_p1++;
+
+							depot_positions[v] = i;
+							v++;
+							break;
+						}
+					}
+					else
+					{
+						if (customers_not_inserted[p1.tours[index_p1]])
+						{
+							tours[i] = p1.tours[index_p1];
+							index_p1++;
+
+							customers_not_inserted[tours[i]] = false;
 							break;
 						}
 					}
 
-					if (not_inserted)
-					{
-						tours[i] = tours_parent[*index_parent];
-						(*index_parent)++;
-
-						break;
-					}
+					index_p1++;
 				}
+			}
+			else
+			{
+				//in posizione i devo mettere un valore del parent
+				while (index_p2 < N)
+				{
+					if (p2.tours[index_p2] < depots)
+					{
+						if (v < vehicles)
+						{
+							tours[i] = p2.tours[index_p2];
+							index_p2++;
 
-				(*index_parent)++;
+							depot_positions[v] = i;
+							v++;
+							break;
+						}
+					}
+					else
+					{
+						if (customers_not_inserted[p2.tours[index_p2]])
+						{
+							tours[i] = p2.tours[index_p2];
+							index_p2++;
+
+							customers_not_inserted[tours[i]] = false;
+							break;
+						}
+					}
+
+					index_p2++;
+				}
 			}
 		}
+
+		delete[] customers_not_inserted;
+
 		// p1.print_tour_matrix();
 		// p2.print_tour_matrix();
 		// print_tour_matrix();
 
 		//sanity_check();
+		// cout<<"\n";
 	}
 
 	void sanity_check()
 	{
+		int v = 0;
+		for (int i = 0; i < customers + vehicles; i++)
+		{
+			if (tours[i] < depots)
+			{
+				v++;
+			}
+		}
+		if (v > vehicles)
+		{
+			cout << "TROPPI VEICOLI!!!\n";
+		}
+
 		for (int i = 0; i < vehicles; i++)
 		{
 			if (tours[depot_positions[i]] >= depots)
