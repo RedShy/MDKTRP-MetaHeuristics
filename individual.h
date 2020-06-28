@@ -109,10 +109,10 @@ public:
 			//se il secondo è un depot aggiorna la posizione dei depot
 			if (tours[second] < depots)
 			{
-				unsigned i = 0;
-				while (depot_positions[i] != second)
-					i++;
-				depot_positions[i] = first;
+				unsigned v = 0;
+				while (depot_positions[v] != second)
+					v++;
+				depot_positions[v] = first;
 
 				//elimino la posizione precedente
 				//start_routes_positions.erase(second);
@@ -730,6 +730,13 @@ public:
 			tours[i] = mark;
 		}
 
+		const unsigned l = customers + depots;
+		bool *customers_not_inserted = new bool[l];
+		for (unsigned i = depots; i < l; i++)
+		{
+			customers_not_inserted[i] = true;
+		}
+
 		//scegli casualmente un numero di posizioni
 		std::uniform_int_distribution<unsigned> random_n(1, customers + vehicles - 2);
 		const unsigned n_positions = random_n(mt);
@@ -758,6 +765,10 @@ public:
 				depot_positions[v] = position;
 				v++;
 			}
+			else
+			{
+				customers_not_inserted[tours[position]] = false;
+			}
 		}
 
 		unsigned index_parent = 0;
@@ -781,33 +792,27 @@ public:
 					}
 					else
 					{
-						bool not_inserted = true;
-						for (unsigned j = 0; j < n_positions; j++)
-						{
-							if (p1.tours[index_parent] == tours[positions[j]])
-							{
-								not_inserted = false;
-								break;
-							}
-						}
-						if (not_inserted)
+						if (customers_not_inserted[p1.tours[index_parent]])
 						{
 							tours[i] = p1.tours[index_parent];
 							index_parent++;
 
+							customers_not_inserted[tours[i]] = false;
 							break;
 						}
+
 					}
 				}
 			}
 		}
 
 		delete[] positions;
+		delete[] customers_not_inserted;
 		// p1.print_tour_matrix();
 		// p2.print_tour_matrix();
 		// print_tour_matrix();
 
-		// sanity_check();
+		//sanity_check();
 	}
 
 	void uniform_cross_over(const Individual &p1, const Individual &p2)
@@ -818,9 +823,9 @@ public:
 		unsigned index_p2 = 0;
 		unsigned v = 0;
 
-		const unsigned l = customers+depots;
-		bool * customers_not_inserted = new bool[l];
-		for(unsigned i = depots; i<l; i++)
+		const unsigned l = customers + depots;
+		bool *customers_not_inserted = new bool[l];
+		for (unsigned i = depots; i < l; i++)
 		{
 			customers_not_inserted[i] = true;
 		}
