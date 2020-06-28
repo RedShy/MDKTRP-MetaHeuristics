@@ -781,16 +781,16 @@ public:
 					}
 					else
 					{
-						bool not_found = true;
+						bool not_inserted = true;
 						for (unsigned j = 0; j < n_positions; j++)
 						{
 							if (p1.tours[index_parent] == tours[positions[j]])
 							{
-								not_found = false;
+								not_inserted = false;
 								break;
 							}
 						}
-						if (not_found)
+						if (not_inserted)
 						{
 							tours[i] = p1.tours[index_parent];
 							index_parent++;
@@ -808,6 +808,74 @@ public:
 		// print_tour_matrix();
 
 		// sanity_check();
+	}
+
+	void uniform_cross_over(const Individual &p1, const Individual &p2)
+	{
+		const unsigned N = vehicles + customers;
+		std::uniform_int_distribution<unsigned> random_bit(0, 1);
+		unsigned index_p1 = 0;
+		unsigned index_p2 = 0;
+		unsigned v = 0;
+		unsigned *index_parent;
+		const unsigned *tours_parent;
+		for (unsigned i = 0; i < N; i++)
+		{
+			if (random_bit(mt) == 0)
+			{
+				index_parent = &index_p1;
+				tours_parent = p1.tours;
+			}
+			else
+			{
+				index_parent = &index_p2;
+				tours_parent = p2.tours;
+			}
+
+			//in posizione i devo mettere un valore del parent
+			while (*index_parent < N)
+			{
+				if (tours_parent[*index_parent] < depots)
+				{
+					if (v < vehicles)
+					{
+						tours[i] = tours_parent[*index_parent];
+						(*index_parent)++;
+
+						depot_positions[v] = i;
+						v++;
+						break;
+					}
+				}
+				else
+				{
+					bool not_inserted = true;
+					for (unsigned j = 0; j <= i; j++)
+					{
+						if (tours[j] == tours_parent[*index_parent])
+						{
+							not_inserted = false;
+							break;
+						}
+					}
+
+					if (not_inserted)
+					{
+						tours[i] = tours_parent[*index_parent];
+						(*index_parent)++;
+
+						break;
+					}
+				}
+
+				(*index_parent)++;
+			}
+		}
+		// p1.print_tour_matrix();
+		// p2.print_tour_matrix();
+		// print_tour_matrix();
+
+		//sanity_check();
 	}
 
 	void sanity_check()
