@@ -5,7 +5,7 @@
 
 double ES_1_1(const int depots, const int customers, const int vehicles, const double *const *const distance_matrix, const int N)
 {
-    Individual parent(vehicles, depots, customers, distance_matrix, mt);
+    Individual parent(vehicles, depots, customers, distance_matrix);
     parent.random_inizialize();
     parent.calculate_cost();
     //parent.print_tour_matrix();
@@ -13,12 +13,36 @@ double ES_1_1(const int depots, const int customers, const int vehicles, const d
     const int generations = 2000000 * N;
     //int max_g=0;
     unsigned last_improved_generation = 0;
+
+    std::uniform_int_distribution<unsigned> random_mut(0, 3);
     unsigned g = 0;
     while (true)
     {
         Individual child(parent);
+
         //child.swap2();
-        child.scrumble();
+        //child.swap3();
+        //child.scrumble();
+        //child.inversion();
+        child.insertion_repeated();
+        const unsigned mut = random_mut(mt);
+        // if (mut == 0)
+        // {
+        //     child.swap2();
+        // }
+        // else if (mut == 1)
+        // {
+        //     child.swap3();
+        // }
+        // else if (mut == 2)
+        // {
+        //     child.scrumble();
+        // }
+        // else
+        // {
+        //     child.inversion();
+        // }
+
         child.calculate_cost();
         if (child.get_cost() < parent.get_cost())
         {

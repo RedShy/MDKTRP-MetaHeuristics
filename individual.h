@@ -1378,10 +1378,7 @@ private:
 	const double *const *const distance_matrix;
 	// è un array di n_veicoli elementi che indica dove si trovano i depot associati ai veicoli all'interno del cromosoma
 	unsigned *depot_positions;
-	//set che indica le posizioni di partenza in ordine crescente delle rotte all'interno del cromosoma
-	//std::set<unsigned> start_routes_positions;
-	//std::mt19937 &mt;
-	//unsigned age;
+
 };
 
 #endif
