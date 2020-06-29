@@ -14,13 +14,13 @@ std::mt19937 mt(rd());
 class Individual
 {
 public:
-	Individual(const unsigned vehicles_, const unsigned depots_, const unsigned customers_, const double *const *const distance_matrix_) : vehicles(vehicles_), depots(depots_), customers(customers_), cost(0), distance_matrix(distance_matrix_)
+	Individual(const unsigned vehicles_, const unsigned depots_, const unsigned customers_, const double *const *const distance_matrix_) : vehicles(vehicles_), depots(depots_), customers(customers_), cost(0), distance_matrix(distance_matrix_), age(0)
 	{
 		tours = new unsigned[vehicles + customers];
 		depot_positions = new unsigned[vehicles];
 	}
 
-	Individual(const Individual &o) : vehicles(o.vehicles), depots(o.depots), customers(o.customers), cost(o.cost), distance_matrix(o.distance_matrix)
+	Individual(const Individual &o) : vehicles(o.vehicles), depots(o.depots), customers(o.customers), cost(o.cost), distance_matrix(o.distance_matrix), age(0)
 	{
 		tours = new unsigned[vehicles + customers];
 		depot_positions = new unsigned[vehicles];
@@ -34,6 +34,19 @@ public:
 		{
 			depot_positions[v] = o.depot_positions[v];
 		}
+	}
+
+	void increase_age()
+	{
+		// age++;
+		// if(age == 10000)
+		// {
+		// 	//cout<<"TROPPO VECCHIO!\n";
+		// 	//cost = 999999;
+		// 	// random_inizialize();
+		// 	// calculate_cost();
+		// 	// age = 0;
+		// }
 	}
 
 	void random_inizialize()
@@ -291,6 +304,228 @@ public:
 				}
 			}
 		}
+	}
+
+	bool insertion()
+	{
+		//il mutatore sceglie un elemento a caso e se è un depot sceglie il depot migliore per il tour,
+		//se è un customer, sceglie la posizione migliore per il customer all'interno del suo tour
+		bool improved = false;
+
+		//scegli un elemento casualmente
+		std::uniform_int_distribution<unsigned> random_position(0, vehicles + customers - 1);
+		const unsigned position = random_position(mt);
+		const unsigned node = tours[position];
+		if (node < depots)
+		{
+			std::uniform_int_distribution<unsigned> random_bit(0, 1);
+			if (random_bit(mt) == 0)
+			{
+				//prova tutti i depot e vedi quale fornisce la latenza migliore
+				double min_latency = calculate_tour_latency(position);
+				unsigned best_depot = node;
+				for (unsigned d = 0; d < depots; d++)
+				{
+					if (d != node)
+					{
+						tours[position] = d;
+
+						//calcola la nuova latenza
+						double latency = calculate_tour_latency(position);
+						if (latency < min_latency)
+						{
+							min_latency = latency;
+							best_depot = node;
+
+							improved = true;
+						}
+					}
+				}
+
+				tours[position] = best_depot;
+			}
+			//bisogna escludere il depot in posizione 0 perché non si può spostare
+			else if (position != 0)
+			{
+				//cerca il depot precedente a questo
+				unsigned last_tour_position = position - 1;
+				while (last_tour_position >= depots)
+				{
+					last_tour_position--;
+				}
+
+				//cerca la posizione migliore del depot all'interno del tour
+				const unsigned N = vehicles + customers;
+				double min_latency = calculate_tour_latency(position) + calculate_tour_latency(last_tour_position);
+				unsigned p = position + 1;
+				unsigned best_position = position;
+				while (p < N && tours[p] >= depots)
+				{
+					//swap sulla nuova posizione
+					tours[position] = tours[p];
+					tours[p] = node;
+
+					double latency = calculate_tour_latency(p) + calculate_tour_latency(last_tour_position);
+					if (latency < min_latency)
+					{
+						min_latency = latency;
+						best_position = p;
+
+						improved = true;
+					}
+
+					//reversiamo lo swap
+					tours[p] = tours[position];
+					tours[position] = node;
+
+					p++;
+				}
+
+				p = position - 1;
+				while (p != last_tour_position)
+				{
+					//swap sulla nuova posizione
+					tours[position] = tours[p];
+					tours[p] = node;
+
+					double latency = calculate_tour_latency(p) + calculate_tour_latency(last_tour_position);
+					if (latency < min_latency)
+					{
+						min_latency = latency;
+						best_position = p;
+
+						improved = true;
+					}
+
+					//reversiamo lo swap
+					tours[p] = tours[position];
+					tours[position] = node;
+
+					p--;
+				}
+
+				//facciamo lo swap migliore
+				tours[position] = tours[best_position];
+				tours[best_position] = node;
+
+				//aggiorniamo il depot
+				unsigned v = 0;
+				while (depot_positions[v] != position)
+				{
+					v++;
+				}
+				depot_positions[v] = best_position;
+			}
+		}
+		else
+		{
+			//trova il depot più a sinistra
+			unsigned start_tour = position - 1;
+			while (tours[start_tour] >= depots)
+			{
+				start_tour--;
+			}
+
+			double min_latency = calculate_tour_latency(start_tour);
+			unsigned p = position - 1;
+			unsigned best_position = position;
+			while (p != start_tour)
+			{
+				//swap sulla nuova posizione
+				tours[position] = tours[p];
+				tours[p] = node;
+
+				double latency = calculate_tour_latency(start_tour);
+				if (latency < min_latency)
+				{
+					min_latency = latency;
+					best_position = p;
+
+					improved = true;
+				}
+
+				//reversiamo lo swap
+				tours[p] = tours[position];
+				tours[position] = node;
+
+				p--;
+			}
+
+			const unsigned N = customers + vehicles;
+			p = position + 1;
+			while (p < N && tours[p] >= depots)
+			{
+				//swap sulla nuova posizione
+				tours[position] = tours[p];
+				tours[p] = node;
+
+				double latency = calculate_tour_latency(start_tour);
+				if (latency < min_latency)
+				{
+					min_latency = latency;
+					best_position = p;
+
+					improved = true;
+				}
+
+				//reversiamo lo swap
+				tours[p] = tours[position];
+				tours[position] = node;
+
+				p++;
+			}
+
+			//swap nella posizione migliore trovata
+			tours[position] = tours[best_position];
+			tours[best_position] = node;
+		}
+
+		return improved;
+		//sanity_check();
+	}
+
+	void insertion_repeated()
+	{
+		//fa un tot di tentativi con insertion
+		unsigned tries = 0;
+		while(tries < 5 && !insertion())
+		{
+			tries++;
+		}
+
+
+		//sanity_check();
+	}
+
+	double calculate_tour_latency(const unsigned position_vehicle)
+	{
+		//restituisce la latenza del tour, dato il veicolo di partenza
+
+		const unsigned N = vehicles + customers;
+		//trova il prossimo depot
+		unsigned p1 = position_vehicle + 1;
+		unsigned len = 0;
+		while (p1 < N && tours[p1] >= depots)
+		{
+			len++;
+			//è possibile memorizzare le latenze di tutti gli archi del tour anziché accedere alla matrice
+			//verrebbe comunque fatto almeno una volta, non so che vantaggi ci sarebbero
+			p1++;
+		}
+
+		double latency = 0;
+		unsigned last = position_vehicle;
+		unsigned next = position_vehicle + 1;
+		while (next < N && tours[next] >= depots)
+		{
+			latency += distance_matrix[tours[last]][tours[next]] * len;
+
+			len--;
+			last = next;
+			next++;
+		}
+
+		return latency;
 	}
 
 	void one_point_cross_over(const Individual &p1, const Individual &p2)
@@ -1083,7 +1318,6 @@ public:
 				}
 			}
 		}
-		
 
 		for (unsigned i = cutting_point_2; i < N; i++)
 		{
@@ -1203,7 +1437,7 @@ public:
 		print_tour_matrix();
 
 		sanity_check();
-		cout<<"\n";
+		cout << "\n";
 
 		delete[] mappings;
 		delete[] customers_mapped_to_depots;
@@ -1375,6 +1609,7 @@ public:
 		}
 
 		//start_routes_positions = m.start_routes_positions;
+		age = m.age;
 
 		return *this;
 	}
@@ -1421,6 +1656,7 @@ private:
 	//set che indica le posizioni di partenza in ordine crescente delle rotte all'interno del cromosoma
 	//std::set<unsigned> start_routes_positions;
 	//std::mt19937 &mt;
+	unsigned age;
 };
 
 #endif
