@@ -3,7 +3,7 @@
 
 #include "individual.h"
 
-double ES_mu_plus_lambda(const unsigned depots, const unsigned customers, const unsigned vehicles, const double *const *const distance_matrix, const unsigned max_g, const unsigned mu, const unsigned lambda)
+double ES_mu_plus_lambda(const unsigned depots, const unsigned customers, const unsigned vehicles, const double *const *const distance_matrix, const unsigned max_g, const unsigned mu, const unsigned lambda, const unsigned mut, const unsigned cross)
 {
     double best_cost = std::numeric_limits<double>::max();
 
@@ -62,64 +62,47 @@ double ES_mu_plus_lambda(const unsigned depots, const unsigned customers, const 
 
             //crea un figlio
             Individual child(individuals[p]);
-            //Individual child(vehicles, depots, customers, distance_matrix);
 
-            //ricombina i genitori
-            // const unsigned cr = random_cross(mt);
-            // if (cr == 0)
-            // {
-            child.two_point_cross_over(individuals[p], individuals[p2]);
-            // }
-            // else if (cr == 1)
-            // {
-            //     //child.best_order_cross_over(individuals[p], individuals[p2], best_individual);
-            // }
-            // else if (cr == 2)
-            // {
-            //     child.one_point_cross_over(individuals[p], individuals[p2]);
-            // }
-            // else if (cr == 3)
-            // {
-            //     child.uniform_cross_over(individuals[p], individuals[p2]);
-            // }
-            // else if (cr == 4)
-            // {
-            //     child.position_base_cross_over(individuals[p], individuals[p2]);
-            // }
+            switch (cross)
+            {
+            case 0:
+                child.one_point_cross_over(individuals[p], individuals[p2]);
+                break;
+            case 1:
+                child.two_point_cross_over(individuals[p], individuals[p2]);
+                break;
+            case 2:
+                child.best_order_cross_over(individuals[p], individuals[p2], best_individual);
+                break;
+            case 3:
+                child.position_base_cross_over(individuals[p], individuals[p2]);
+                break;
+            case 4:
+                child.uniform_cross_over(individuals[p], individuals[p2]);
+                break;
+            case 5:
+                //no cross over
+                break;
+            }
 
-            //child.one_point_cross_over(individuals[p], individuals[p2]);
-            //child.two_point_cross_over(individuals[p], individuals[p2]);
-            //child.best_order_cross_over(individuals[p], individuals[p2], best_individual);
-
-            //facciamo mutazione solo con una certa probabilita
-            //const unsigned mut = random_mut(mt);
-            //const unsigned rate = random_element(mt);
-            // if (rate == 0)
-            // {
-            // if (mut == 0)
-            // {
-            //     child.swap2();
-            // }
-            // else if (mut == 1)
-            // {
-            //     child.swap3();
-            // }
-            // else if (mut == 2)
-            // {
-            //     child.scrumble();
-            // }
-            // else
-            // {
-            //     child.inversion();
-            // }
-            // }
-
-            child.swap2();
-            //child.swap3();
-            //child.scrumble();
-            //child.inversion();
-            //child.insertion_prova();
-            //child.insertion_repeated();
+            switch (mut)
+            {
+            case 0:
+                child.swap2();
+                break;
+            case 1:
+                child.swap3();
+                break;
+            case 2:
+                child.scrumble();
+                break;
+            case 3:
+                child.inversion();
+                break;
+            case 4:
+                child.insertion();
+                break;
+            }
 
             child.calculate_cost();
 
@@ -132,7 +115,7 @@ double ES_mu_plus_lambda(const unsigned depots, const unsigned customers, const 
                 if (child.get_cost() < best_cost)
                 {
                     best_cost = child.get_cost();
-                    std::cout << "Child improved: " << best_cost << "\n";
+                    //std::cout << "Child improved: " << best_cost << "\n";
 
                     best_individual = child;
                 }
@@ -323,7 +306,7 @@ double ES_mu_plus_lambda_adaptive(const int depots, const int customers, const i
         }
     }
 
-    return best_cost;
+    return best_individual.get_cost();
 }
 
 double ES_mu_plus_lambda_test(const int depots, const int customers, const int vehicles, const double *const *const distance_matrix, const int N, const int mu, const int lambda)
