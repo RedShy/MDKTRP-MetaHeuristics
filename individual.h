@@ -216,11 +216,12 @@ public:
 			}
 
 			//scegli una seconda cella maggiore della prima
-			unsigned second = random_cell(mt);
-			while (second <= first)
-			{
-				second = random_cell(mt);
-			}
+			std::uniform_int_distribution<unsigned> random_cell2(first + 1, vehicles + customers - 1);
+			unsigned second = random_cell2(mt);
+			// while (second <= first)
+			// {
+			// 	second = random_cell(mt);
+			// }
 			//inverti questo segmento di array
 			std::reverse(&tours[first], &tours[second + 1]);
 
@@ -264,11 +265,13 @@ public:
 			}
 
 			//scegli una seconda cella maggiore della prima
-			unsigned second = random_cell(mt);
-			while (second <= first)
-			{
-				second = random_cell(mt);
-			}
+			std::uniform_int_distribution<unsigned> random_cell2(first + 1, vehicles + customers - 1);
+			unsigned second = random_cell2(mt);
+			//unsigned second = random_cell(mt);
+			// while (second <= first)
+			// {
+			// 	second = random_cell(mt);
+			// }
 			std::shuffle(&tours[first], &tours[second + 1], mt);
 
 			//aggiorno la posizione degli altri depot
@@ -296,27 +299,31 @@ public:
 		const unsigned *const tours_p1 = p1.tours;
 		const unsigned *const tours_p2 = p2.tours;
 
+		const unsigned l = customers + depots;
+		bool *customers_not_inserted = new bool[l];
+		for (unsigned i = depots; i < l; i++)
+		{
+			customers_not_inserted[i] = true;
+		}
+
 		std::uniform_int_distribution<unsigned> random_cell(0, vehicles + customers - 1);
 		//scegli cutting point
 		const unsigned cutting_point = random_cell(mt);
 
 		//copia interamente la prima metà di elementi
 		unsigned index_child = 0;
+		unsigned vehicles_inserted = 0;
 		for (; index_child < cutting_point; index_child++)
 		{
 			tours[index_child] = tours_p1[index_child];
-		}
-
-		//contiamo quanti veicoli sono stati inseriti
-		unsigned vehicles_inserted = 0;
-		for (unsigned v = 0; v < vehicles; v++)
-		{
-			if (p1.depot_positions[v] < cutting_point)
+			if (tours[index_child] < depots)
 			{
-				//aggiorniamo la posizione dei depots del figlio
-				depot_positions[vehicles_inserted] = p1.depot_positions[v];
-
+				depot_positions[vehicles_inserted] = index_child;
 				vehicles_inserted++;
+			}
+			else
+			{
+				customers_not_inserted[tours[index_child]] = false;
 			}
 		}
 
@@ -342,24 +349,20 @@ public:
 			else
 			{
 				//dobbiamo capire se è stato già inserito oppure no
-				bool not_inserted = true;
-				for (unsigned i = 0; i < cutting_point; i++)
-				{
-					if (tours[i] == node)
-					{
-						not_inserted = false;
-						break;
-					}
-				}
-				if (not_inserted)
+				if (customers_not_inserted[node])
 				{
 					tours[index_child] = node;
 					index_child++;
+
+					customers_not_inserted[node] = false;
 				}
 			}
 
 			index_parent++;
 		}
+
+		delete[] customers_not_inserted;
+		//sanity_check();
 	}
 
 	void two_point_cross_over(const Individual &p1, const Individual &p2)
@@ -367,6 +370,13 @@ public:
 		unsigned *const tours = this->tours;
 		const unsigned *const tours_p1 = p1.tours;
 		const unsigned *const tours_p2 = p2.tours;
+
+		const unsigned l = customers + depots;
+		bool *customers_not_inserted = new bool[l];
+		for (unsigned i = depots; i < l; i++)
+		{
+			customers_not_inserted[i] = true;
+		}
 
 		std::uniform_int_distribution<unsigned> random_cell(0, vehicles + customers - 1);
 		//scegli cutting point
@@ -382,22 +392,19 @@ public:
 			cutting_point2 = random_cell(mt);
 		}
 
+		unsigned vehicles_inserted = 0;
 		unsigned index_child = cutting_point1;
 		for (; index_child < cutting_point2; index_child++)
 		{
 			tours[index_child] = tours_p1[index_child];
-		}
-
-		//contiamo quanti veicoli sono stati inseriti
-		unsigned vehicles_inserted = 0;
-		for (unsigned v = 0; v < vehicles; v++)
-		{
-			if (p1.depot_positions[v] >= cutting_point1 && p1.depot_positions[v] < cutting_point2)
+			if (tours[index_child] < depots)
 			{
-				//aggiorniamo la posizione dei depots del figlio
-				depot_positions[vehicles_inserted] = p1.depot_positions[v];
-
+				depot_positions[vehicles_inserted] = index_child;
 				vehicles_inserted++;
+			}
+			else
+			{
+				customers_not_inserted[tours[index_child]] = false;
 			}
 		}
 
@@ -424,19 +431,12 @@ public:
 			else
 			{
 				//dobbiamo capire se è stato già inserito oppure no
-				bool not_inserted = true;
-				for (unsigned i = cutting_point1; i < cutting_point2; i++)
-				{
-					if (tours[i] == node)
-					{
-						not_inserted = false;
-						break;
-					}
-				}
-				if (not_inserted)
+				if (customers_not_inserted[node])
 				{
 					tours[index_child] = node;
 					index_child++;
+
+					customers_not_inserted[node] = false;
 				}
 			}
 
@@ -463,38 +463,37 @@ public:
 			//è un customer
 			else
 			{
-				//dobbiamo capire se è stato già inserito oppure no
-				bool not_inserted = true;
-				for (unsigned i = cutting_point1; i < cutting_point2; i++)
-				{
-					if (tours[i] == node)
-					{
-						not_inserted = false;
-						break;
-					}
-				}
-				if (not_inserted)
+				if (customers_not_inserted[node])
 				{
 					tours[index_child] = node;
 					index_child++;
+
+					customers_not_inserted[node] = false;
 				}
 			}
 
 			index_parent++;
 		}
+
+		delete[] customers_not_inserted;
+		//sanity_check();
 	}
 
 	void best_order_cross_over(const Individual &p1, const Individual &p2, const Individual &best)
 	{
 		const unsigned J = vehicles + customers;
-		int *const p1_tours = new int[J];
-		for (unsigned i = 0; i < J; i++)
-		{
-			p1_tours[i] = p1.tours[i];
-		}
+		// int *const p1_tours = new int[J];
+		// for (unsigned i = 0; i < J; i++)
+		// {
+		// 	p1_tours[i] = p1.tours[i];
+		// }
 
-		std::uniform_int_distribution<unsigned> n_random(2, J - 1);
-		//const unsigned n_cutting_points = n_random(mt);
+		const unsigned l = customers + depots;
+		bool *customers_in_sequence = new bool[l];
+		for (unsigned i = depots; i < l; i++)
+		{
+			customers_in_sequence[i] = false;
+		}
 
 		//scelgo il primo cutting point
 		std::uniform_int_distribution<unsigned> random_cutting_point(1, J - 2);
@@ -509,14 +508,16 @@ public:
 		//scegliamo una modalità per la sequenza
 		std::uniform_int_distribution<unsigned> random_value_sequence(0, 2);
 		const unsigned value_sequence = random_value_sequence(mt);
+
 		unsigned v = 0;
 		if (value_sequence == 0)
 		{
 			//copia interamente la sequenza dal genitore principale
 			for (unsigned i = 0; i < cutting_point_1; i++)
 			{
-				tours[i] = p1_tours[i];
-				if (tours[i] < depots)
+				const unsigned node = p1.tours[i];
+				tours[i] = node;
+				if (node < depots)
 				{
 					depot_positions[v] = i;
 					v++;
@@ -532,46 +533,58 @@ public:
 				other_tours = best.tours;
 			}
 
+			//conta il numero di depot presenti nella sequenza
+			unsigned vehicles_insertable = 0;
+			for (unsigned i = 0; i < cutting_point_1; i++)
+			{
+				const unsigned node = p1.tours[i];
+				if (node < depots)
+				{
+					vehicles_insertable++;
+				}
+				else
+				{
+					customers_in_sequence[node] = true;
+				}
+			}
+
 			unsigned index_child = 0;
 			for (unsigned i_p2 = 0; i_p2 < J && index_child < cutting_point_1; i_p2++)
 			{
-				if (other_tours[i_p2] < depots)
+				const unsigned node = other_tours[i_p2];
+				if (node < depots)
 				{
 					//voglio inserire un depot
-					//controllo se c'è un depot da inserire nella sequenza
-					for (unsigned i = 0; i < cutting_point_1; i++)
+					if (vehicles_insertable > 0)
 					{
-						if (p1_tours[i] != -1 && p1_tours[i] < depots)
-						{
-							tours[index_child] = p1_tours[i];
-							p1_tours[i] = -1;
+						vehicles_insertable--;
 
-							depot_positions[v] = index_child;
-							v++;
-							index_child++;
-							break;
-						}
+						tours[index_child] = node;
+						depot_positions[v] = index_child;
+
+						v++;
+						index_child++;
 					}
 				}
 				else
 				{
-					//questo customer è da inserire?
-					for (unsigned i = 0; i < cutting_point_1; i++)
+					//voglio inserire un customer
+					if (customers_in_sequence[node])
 					{
-						if (p1_tours[i] != -1 && other_tours[i_p2] == p1_tours[i])
-						{
-							tours[index_child] = p1_tours[i];
-							p1_tours[i] = -1;
+						tours[index_child] = node;
+						index_child++;
 
-							index_child++;
-							break;
-						}
+						customers_in_sequence[node] = false;
 					}
 				}
 			}
 		}
 
+		std::uniform_int_distribution<unsigned> n_random(2, J - 1);
+		//const unsigned n_cutting_points = n_random(mt);
+
 		unsigned n_cutting_points = 2;
+
 		unsigned last_cutting_point = cutting_point_1;
 		for (unsigned i = 1; i < n_cutting_points; i++)
 		{
@@ -591,8 +604,9 @@ public:
 				//copia interamente la sequenza dal genitore principale
 				for (unsigned i = last_cutting_point; i < next_cutting_point; i++)
 				{
-					tours[i] = p1_tours[i];
-					if (tours[i] < depots)
+					const unsigned node = p1.tours[i];
+					tours[i] = node;
+					if (node < depots)
 					{
 						depot_positions[v] = i;
 						v++;
@@ -608,40 +622,48 @@ public:
 					other_tours = best.tours;
 				}
 
+				//conta il numero di depot presenti nella sequenza
+				unsigned vehicles_insertable = 0;
+				for (unsigned i = last_cutting_point; i < next_cutting_point; i++)
+				{
+					const unsigned node = p1.tours[i];
+					if (node < depots)
+					{
+						vehicles_insertable++;
+					}
+					else
+					{
+						customers_in_sequence[node] = true;
+					}
+				}
+
 				unsigned index_child = last_cutting_point;
 				for (unsigned i_p2 = 0; i_p2 < J && index_child < next_cutting_point; i_p2++)
 				{
-					if (other_tours[i_p2] < depots)
+					const unsigned node = other_tours[i_p2];
+					if (node < depots)
 					{
 						//voglio inserire un depot
-						//controllo se c'è un depot da inserire nella sequenza
-						for (unsigned i = last_cutting_point; i < next_cutting_point; i++)
+						if (vehicles_insertable > 0)
 						{
-							if (p1_tours[i] != -1 && p1_tours[i] < depots)
-							{
-								tours[index_child] = p1_tours[i];
-								p1_tours[i] = -1;
+							vehicles_insertable--;
 
-								depot_positions[v] = index_child;
-								v++;
-								index_child++;
-								break;
-							}
+							tours[index_child] = node;
+							depot_positions[v] = index_child;
+
+							v++;
+							index_child++;
 						}
 					}
 					else
 					{
-						//questo customer è da inserire?
-						for (unsigned i = last_cutting_point; i < next_cutting_point; i++)
+						//voglio inserire un customer
+						if (customers_in_sequence[node])
 						{
-							if (p1_tours[i] != -1 && other_tours[i_p2] == p1_tours[i])
-							{
-								tours[index_child] = p1_tours[i];
-								p1_tours[i] = -1;
+							tours[index_child] = node;
+							index_child++;
 
-								index_child++;
-								break;
-							}
+							customers_in_sequence[node] = false;
 						}
 					}
 				}
@@ -656,8 +678,9 @@ public:
 			//copia interamente la sequenza dal genitore principale
 			for (unsigned i = last_cutting_point; i < J; i++)
 			{
-				tours[i] = p1_tours[i];
-				if (tours[i] < depots)
+				const unsigned node = p1.tours[i];
+				tours[i] = node;
+				if (node < depots)
 				{
 					depot_positions[v] = i;
 					v++;
@@ -673,40 +696,48 @@ public:
 				other_tours = best.tours;
 			}
 
+			//conta il numero di depot presenti nella sequenza
+			unsigned vehicles_insertable = 0;
+			for (unsigned i = last_cutting_point; i < J; i++)
+			{
+				const unsigned node = p1.tours[i];
+				if (node < depots)
+				{
+					vehicles_insertable++;
+				}
+				else
+				{
+					customers_in_sequence[node] = true;
+				}
+			}
+
 			unsigned index_child = last_cutting_point;
 			for (unsigned i_p2 = 0; i_p2 < J && index_child < J; i_p2++)
 			{
-				if (other_tours[i_p2] < depots)
+				const unsigned node = other_tours[i_p2];
+				if (node < depots)
 				{
 					//voglio inserire un depot
-					//controllo se c'è un depot da inserire nella sequenza
-					for (unsigned i = last_cutting_point; i < J; i++)
+					if (vehicles_insertable > 0)
 					{
-						if (p1_tours[i] != -1 && p1_tours[i] < depots)
-						{
-							tours[index_child] = p1_tours[i];
-							p1_tours[i] = -1;
+						vehicles_insertable--;
 
-							depot_positions[v] = index_child;
-							v++;
-							index_child++;
-							break;
-						}
+						tours[index_child] = node;
+						depot_positions[v] = index_child;
+
+						v++;
+						index_child++;
 					}
 				}
 				else
 				{
-					//questo customer è da inserire?
-					for (unsigned i = last_cutting_point; i < J; i++)
+					//voglio inserire un customer
+					if (customers_in_sequence[node])
 					{
-						if (p1_tours[i] != -1 && other_tours[i_p2] == p1_tours[i])
-						{
-							tours[index_child] = p1_tours[i];
-							p1_tours[i] = -1;
+						tours[index_child] = node;
+						index_child++;
 
-							index_child++;
-							break;
-						}
+						customers_in_sequence[node] = false;
 					}
 				}
 			}
@@ -718,18 +749,12 @@ public:
 
 		//sanity_check();
 
-		delete[] p1_tours;
+		//delete[] p1_tours;
+		delete[] customers_in_sequence;
 	}
 
 	void position_base_cross_over(const Individual &p1, const Individual &p2)
 	{
-		//contrassegno gli elementi
-		const unsigned mark = customers + depots + 85;
-		for (unsigned i = 0; i < vehicles + customers; i++)
-		{
-			tours[i] = mark;
-		}
-
 		const unsigned l = customers + depots;
 		bool *customers_not_inserted = new bool[l];
 		for (unsigned i = depots; i < l; i++)
@@ -741,73 +766,71 @@ public:
 		std::uniform_int_distribution<unsigned> random_n(1, customers + vehicles - 2);
 		const unsigned n_positions = random_n(mt);
 
-		unsigned index_position = 0;
-		unsigned *positions = new unsigned[n_positions];
+		const unsigned N = customers + vehicles - 1;
+
+		unsigned *const positions = new unsigned[N + 1];
+		for (unsigned i = 0; i <= N; i++)
+		{
+			positions[i] = i;
+		}
+
+		std::shuffle(positions + 1, positions + customers + vehicles, mt);
 
 		unsigned v = 0;
-		const unsigned N = customers + vehicles - 1;
-		std::uniform_int_distribution<unsigned> random_position(0, N);
 		for (unsigned i = 0; i < n_positions; i++)
 		{
-			unsigned position = random_position(mt);
-			while (tours[position] != mark)
-			{
-				position = random_position(mt);
-			}
+			const unsigned position = positions[i];
+			const unsigned node = p2.tours[position];
 
-			positions[index_position] = position;
-			index_position++;
-
-			tours[position] = p2.tours[position];
-
-			if (tours[position] < depots)
+			tours[position] = node;
+			if (node < depots)
 			{
 				depot_positions[v] = position;
 				v++;
 			}
 			else
 			{
-				customers_not_inserted[tours[position]] = false;
+				customers_not_inserted[node] = false;
 			}
 		}
-
+		//const unsigned * const p1_tours = p1.tours;
 		unsigned index_parent = 0;
-		for (unsigned i = 0; i <= N; i++)
+		for (unsigned i = n_positions; i <= N; i++)
 		{
-			if (tours[i] == mark)
+			while (true)
 			{
-				for (; index_parent <= N; index_parent++)
+				const unsigned node = p1.tours[index_parent];
+				if (node < depots)
 				{
-					if (p1.tours[index_parent] < depots)
+					if (v < vehicles)
 					{
-						if (v < vehicles)
-						{
-							tours[i] = p1.tours[index_parent];
+						tours[positions[i]] = node;
 
-							depot_positions[v] = i;
-							v++;
-							index_parent++;
-							break;
-						}
-					}
-					else
-					{
-						if (customers_not_inserted[p1.tours[index_parent]])
-						{
-							tours[i] = p1.tours[index_parent];
-							index_parent++;
-
-							customers_not_inserted[tours[i]] = false;
-							break;
-						}
-
+						depot_positions[v] = positions[i];
+						v++;
+						index_parent++;
+						break;
 					}
 				}
+				else
+				{
+					if (customers_not_inserted[node])
+					{
+						tours[positions[i]] = node;
+						index_parent++;
+
+						customers_not_inserted[node] = false;
+						break;
+					}
+				}
+
+				index_parent++;
 			}
 		}
 
 		delete[] positions;
 		delete[] customers_not_inserted;
+
 		// p1.print_tour_matrix();
 		// p2.print_tour_matrix();
 		// print_tour_matrix();
@@ -837,11 +860,12 @@ public:
 				//in posizione i devo mettere un valore del parent
 				while (index_p1 < N)
 				{
-					if (p1.tours[index_p1] < depots)
+					const unsigned node = p1.tours[index_p1];
+					if (node < depots)
 					{
 						if (v < vehicles)
 						{
-							tours[i] = p1.tours[index_p1];
+							tours[i] = node;
 							index_p1++;
 
 							depot_positions[v] = i;
@@ -851,12 +875,12 @@ public:
 					}
 					else
 					{
-						if (customers_not_inserted[p1.tours[index_p1]])
+						if (customers_not_inserted[node])
 						{
-							tours[i] = p1.tours[index_p1];
+							tours[i] = node;
 							index_p1++;
 
-							customers_not_inserted[tours[i]] = false;
+							customers_not_inserted[node] = false;
 							break;
 						}
 					}
@@ -869,11 +893,12 @@ public:
 				//in posizione i devo mettere un valore del parent
 				while (index_p2 < N)
 				{
-					if (p2.tours[index_p2] < depots)
+					const unsigned node = p2.tours[index_p2];
+					if (node < depots)
 					{
 						if (v < vehicles)
 						{
-							tours[i] = p2.tours[index_p2];
+							tours[i] = node;
 							index_p2++;
 
 							depot_positions[v] = i;
@@ -883,12 +908,12 @@ public:
 					}
 					else
 					{
-						if (customers_not_inserted[p2.tours[index_p2]])
+						if (customers_not_inserted[node])
 						{
-							tours[i] = p2.tours[index_p2];
+							tours[i] = node;
 							index_p2++;
 
-							customers_not_inserted[tours[i]] = false;
+							customers_not_inserted[node] = false;
 							break;
 						}
 					}
@@ -906,6 +931,282 @@ public:
 
 		//sanity_check();
 		// cout<<"\n";
+	}
+
+	void partially_mapped_cross_over(const Individual &p1, const Individual &p2)
+	{
+		unsigned cutting_point_1 = 3;
+		unsigned cutting_point_2 = 7;
+
+		const unsigned N = customers + vehicles;
+
+		int *mappings = new int[N];
+		for (unsigned i = 0; i < N; i++)
+		{
+			mappings[i] = -1;
+		}
+
+		unsigned *customers_mapped_to_depots = new unsigned[vehicles];
+		unsigned n_customers_mapped_to_depots = 0;
+
+		unsigned v = 0;
+		for (unsigned i = cutting_point_1; i < cutting_point_2; i++)
+		{
+			tours[i] = p2.tours[i];
+			if (tours[i] < depots)
+			{
+				depot_positions[v] = i;
+				v++;
+
+				if (p1.tours[i] >= depots)
+				{
+					customers_mapped_to_depots[n_customers_mapped_to_depots] = p1.tours[i];
+					n_customers_mapped_to_depots++;
+				}
+			}
+			else
+			{
+				mappings[p2.tours[i]] = p1.tours[i];
+			}
+		}
+
+		unsigned index_customers_mapped = 0;
+		for (unsigned i = 0; i < cutting_point_1; i++)
+		{
+			//voglio inserire un depot
+			if (p1.tours[i] < depots)
+			{
+				//posso inserire un depot?
+				if (v < vehicles)
+				{
+					tours[i] = p1.tours[i];
+
+					depot_positions[v] = i;
+					v++;
+				}
+				//non posso inserire un depot allora inserisco un customer associato ad un depot
+				else
+				{
+					const unsigned customer = customers_mapped_to_depots[index_customers_mapped];
+					if (mappings[customer] == -1)
+					{
+						tours[i] = customer;
+					}
+					else
+					{
+						unsigned mapped = mappings[customer];
+						while (mappings[mapped] != -1)
+						{
+							mapped = mappings[mapped];
+						}
+						tours[i] = mapped;
+					}
+					index_customers_mapped++;
+				}
+			}
+			else
+			{
+				if (mappings[p1.tours[i]] == -1)
+				{
+					if (p1.tours[i] < depots)
+					{
+						if (v < vehicles)
+						{
+							tours[i] = p1.tours[i];
+
+							depot_positions[v] = i;
+							v++;
+						}
+						else
+						{
+							const unsigned customer = customers_mapped_to_depots[index_customers_mapped];
+							if (mappings[customer] == -1)
+							{
+								tours[i] = customer;
+							}
+							else
+							{
+								unsigned mapped = mappings[customer];
+								while (mappings[mapped] != -1)
+								{
+									mapped = mappings[mapped];
+								}
+								tours[i] = mapped;
+							}
+							index_customers_mapped++;
+						}
+					}
+					else
+					{
+						tours[i] = p1.tours[i];
+					}
+				}
+				else
+				{
+					unsigned mapped = mappings[p1.tours[i]];
+					while (mappings[mapped] != -1)
+					{
+						mapped = mappings[mapped];
+					}
+					if (mapped < depots)
+					{
+						if (v < vehicles)
+						{
+							tours[i] = mapped;
+
+							depot_positions[v] = i;
+							v++;
+						}
+						else
+						{
+							const unsigned customer = customers_mapped_to_depots[index_customers_mapped];
+							if (mappings[customer] == -1)
+							{
+								tours[i] = customer;
+							}
+							else
+							{
+								unsigned mapped = mappings[customer];
+								while (mappings[mapped] != -1)
+								{
+									mapped = mappings[mapped];
+								}
+								tours[i] = mapped;
+							}
+							index_customers_mapped++;
+						}
+					}
+					else
+					{
+						tours[i] = mapped;
+					}
+				}
+			}
+		}
+		
+
+		for (unsigned i = cutting_point_2; i < N; i++)
+		{
+			//voglio inserire un depot
+			if (p1.tours[i] < depots)
+			{
+				//posso inserire un depot?
+				if (v < vehicles)
+				{
+					tours[i] = p1.tours[i];
+
+					depot_positions[v] = i;
+					v++;
+				}
+				//non posso inserire un depot allora inserisco un customer associato ad un depot
+				else
+				{
+					const unsigned customer = customers_mapped_to_depots[index_customers_mapped];
+					if (mappings[customer] == -1)
+					{
+						tours[i] = customer;
+					}
+					else
+					{
+						unsigned mapped = mappings[customer];
+						while (mappings[mapped] != -1)
+						{
+							mapped = mappings[mapped];
+						}
+						tours[i] = mapped;
+					}
+					index_customers_mapped++;
+				}
+			}
+			else
+			{
+				if (mappings[p1.tours[i]] == -1)
+				{
+					if (p1.tours[i] < depots)
+					{
+						if (v < vehicles)
+						{
+							tours[i] = p1.tours[i];
+
+							depot_positions[v] = i;
+							v++;
+						}
+						else
+						{
+							const unsigned customer = customers_mapped_to_depots[index_customers_mapped];
+							if (mappings[customer] == -1)
+							{
+								tours[i] = customer;
+							}
+							else
+							{
+								unsigned mapped = mappings[customer];
+								while (mappings[mapped] != -1)
+								{
+									mapped = mappings[mapped];
+								}
+								tours[i] = mapped;
+							}
+							index_customers_mapped++;
+						}
+					}
+					else
+					{
+						tours[i] = p1.tours[i];
+					}
+				}
+				else
+				{
+					unsigned mapped = mappings[p1.tours[i]];
+					while (mappings[mapped] != -1)
+					{
+						mapped = mappings[mapped];
+					}
+					if (mapped < depots)
+					{
+						if (v < vehicles)
+						{
+							tours[i] = mapped;
+
+							depot_positions[v] = i;
+							v++;
+						}
+						else
+						{
+							const unsigned customer = customers_mapped_to_depots[index_customers_mapped];
+							if (mappings[customer] == -1)
+							{
+								tours[i] = customer;
+							}
+							else
+							{
+								unsigned mapped = mappings[customer];
+								while (mappings[mapped] != -1)
+								{
+									mapped = mappings[mapped];
+								}
+								tours[i] = mapped;
+							}
+							index_customers_mapped++;
+						}
+					}
+					else
+					{
+						tours[i] = mapped;
+					}
+				}
+			}
+		}
+
+		p1.print_tour_matrix();
+		p2.print_tour_matrix();
+		print_tour_matrix();
+
+		sanity_check();
+		cout<<"\n";
+
+		delete[] mappings;
+		delete[] customers_mapped_to_depots;
 	}
 
 	void sanity_check()
@@ -945,6 +1246,7 @@ public:
 			if (!found)
 			{
 				cout << "CUSTOMER " << i << " NON TROVATO!!!\n";
+				exit(0);
 			}
 		}
 	}
@@ -1037,6 +1339,8 @@ public:
 		}
 
 		cost = sum;
+
+		//sanity_check();
 	}
 
 	double get_cost() const
