@@ -14,13 +14,13 @@ std::mt19937 mt(rd());
 class Individual
 {
 public:
-	Individual(const unsigned vehicles_, const unsigned depots_, const unsigned customers_, const double *const *const distance_matrix_) : vehicles(vehicles_), depots(depots_), customers(customers_), cost(0), distance_matrix(distance_matrix_), age(0)
+	Individual(const unsigned vehicles_, const unsigned depots_, const unsigned customers_, const double *const *const distance_matrix_) : vehicles(vehicles_), depots(depots_), customers(customers_), cost(0), distance_matrix(distance_matrix_)
 	{
 		tours = new unsigned[vehicles + customers];
 		depot_positions = new unsigned[vehicles];
 	}
 
-	Individual(const Individual &o) : vehicles(o.vehicles), depots(o.depots), customers(o.customers), cost(o.cost), distance_matrix(o.distance_matrix), age(0)
+	Individual(const Individual &o) : vehicles(o.vehicles), depots(o.depots), customers(o.customers), cost(o.cost), distance_matrix(o.distance_matrix)
 	{
 		tours = new unsigned[vehicles + customers];
 		depot_positions = new unsigned[vehicles];
@@ -1168,281 +1168,6 @@ public:
 		// cout<<"\n";
 	}
 
-	void partially_mapped_cross_over(const Individual &p1, const Individual &p2)
-	{
-		unsigned cutting_point_1 = 3;
-		unsigned cutting_point_2 = 7;
-
-		const unsigned N = customers + vehicles;
-
-		int *mappings = new int[N];
-		for (unsigned i = 0; i < N; i++)
-		{
-			mappings[i] = -1;
-		}
-
-		unsigned *customers_mapped_to_depots = new unsigned[vehicles];
-		unsigned n_customers_mapped_to_depots = 0;
-
-		unsigned v = 0;
-		for (unsigned i = cutting_point_1; i < cutting_point_2; i++)
-		{
-			tours[i] = p2.tours[i];
-			if (tours[i] < depots)
-			{
-				depot_positions[v] = i;
-				v++;
-
-				if (p1.tours[i] >= depots)
-				{
-					customers_mapped_to_depots[n_customers_mapped_to_depots] = p1.tours[i];
-					n_customers_mapped_to_depots++;
-				}
-			}
-			else
-			{
-				mappings[p2.tours[i]] = p1.tours[i];
-			}
-		}
-
-		unsigned index_customers_mapped = 0;
-		for (unsigned i = 0; i < cutting_point_1; i++)
-		{
-			//voglio inserire un depot
-			if (p1.tours[i] < depots)
-			{
-				//posso inserire un depot?
-				if (v < vehicles)
-				{
-					tours[i] = p1.tours[i];
-
-					depot_positions[v] = i;
-					v++;
-				}
-				//non posso inserire un depot allora inserisco un customer associato ad un depot
-				else
-				{
-					const unsigned customer = customers_mapped_to_depots[index_customers_mapped];
-					if (mappings[customer] == -1)
-					{
-						tours[i] = customer;
-					}
-					else
-					{
-						unsigned mapped = mappings[customer];
-						while (mappings[mapped] != -1)
-						{
-							mapped = mappings[mapped];
-						}
-						tours[i] = mapped;
-					}
-					index_customers_mapped++;
-				}
-			}
-			else
-			{
-				if (mappings[p1.tours[i]] == -1)
-				{
-					if (p1.tours[i] < depots)
-					{
-						if (v < vehicles)
-						{
-							tours[i] = p1.tours[i];
-
-							depot_positions[v] = i;
-							v++;
-						}
-						else
-						{
-							const unsigned customer = customers_mapped_to_depots[index_customers_mapped];
-							if (mappings[customer] == -1)
-							{
-								tours[i] = customer;
-							}
-							else
-							{
-								unsigned mapped = mappings[customer];
-								while (mappings[mapped] != -1)
-								{
-									mapped = mappings[mapped];
-								}
-								tours[i] = mapped;
-							}
-							index_customers_mapped++;
-						}
-					}
-					else
-					{
-						tours[i] = p1.tours[i];
-					}
-				}
-				else
-				{
-					unsigned mapped = mappings[p1.tours[i]];
-					while (mappings[mapped] != -1)
-					{
-						mapped = mappings[mapped];
-					}
-					if (mapped < depots)
-					{
-						if (v < vehicles)
-						{
-							tours[i] = mapped;
-
-							depot_positions[v] = i;
-							v++;
-						}
-						else
-						{
-							const unsigned customer = customers_mapped_to_depots[index_customers_mapped];
-							if (mappings[customer] == -1)
-							{
-								tours[i] = customer;
-							}
-							else
-							{
-								unsigned mapped = mappings[customer];
-								while (mappings[mapped] != -1)
-								{
-									mapped = mappings[mapped];
-								}
-								tours[i] = mapped;
-							}
-							index_customers_mapped++;
-						}
-					}
-					else
-					{
-						tours[i] = mapped;
-					}
-				}
-			}
-		}
-
-		for (unsigned i = cutting_point_2; i < N; i++)
-		{
-			//voglio inserire un depot
-			if (p1.tours[i] < depots)
-			{
-				//posso inserire un depot?
-				if (v < vehicles)
-				{
-					tours[i] = p1.tours[i];
-
-					depot_positions[v] = i;
-					v++;
-				}
-				//non posso inserire un depot allora inserisco un customer associato ad un depot
-				else
-				{
-					const unsigned customer = customers_mapped_to_depots[index_customers_mapped];
-					if (mappings[customer] == -1)
-					{
-						tours[i] = customer;
-					}
-					else
-					{
-						unsigned mapped = mappings[customer];
-						while (mappings[mapped] != -1)
-						{
-							mapped = mappings[mapped];
-						}
-						tours[i] = mapped;
-					}
-					index_customers_mapped++;
-				}
-			}
-			else
-			{
-				if (mappings[p1.tours[i]] == -1)
-				{
-					if (p1.tours[i] < depots)
-					{
-						if (v < vehicles)
-						{
-							tours[i] = p1.tours[i];
-
-							depot_positions[v] = i;
-							v++;
-						}
-						else
-						{
-							const unsigned customer = customers_mapped_to_depots[index_customers_mapped];
-							if (mappings[customer] == -1)
-							{
-								tours[i] = customer;
-							}
-							else
-							{
-								unsigned mapped = mappings[customer];
-								while (mappings[mapped] != -1)
-								{
-									mapped = mappings[mapped];
-								}
-								tours[i] = mapped;
-							}
-							index_customers_mapped++;
-						}
-					}
-					else
-					{
-						tours[i] = p1.tours[i];
-					}
-				}
-				else
-				{
-					unsigned mapped = mappings[p1.tours[i]];
-					while (mappings[mapped] != -1)
-					{
-						mapped = mappings[mapped];
-					}
-					if (mapped < depots)
-					{
-						if (v < vehicles)
-						{
-							tours[i] = mapped;
-
-							depot_positions[v] = i;
-							v++;
-						}
-						else
-						{
-							const unsigned customer = customers_mapped_to_depots[index_customers_mapped];
-							if (mappings[customer] == -1)
-							{
-								tours[i] = customer;
-							}
-							else
-							{
-								unsigned mapped = mappings[customer];
-								while (mappings[mapped] != -1)
-								{
-									mapped = mappings[mapped];
-								}
-								tours[i] = mapped;
-							}
-							index_customers_mapped++;
-						}
-					}
-					else
-					{
-						tours[i] = mapped;
-					}
-				}
-			}
-		}
-
-		p1.print_tour_matrix();
-		p2.print_tour_matrix();
-		print_tour_matrix();
-
-		sanity_check();
-		cout << "\n";
-
-		delete[] mappings;
-		delete[] customers_mapped_to_depots;
-	}
-
 	void sanity_check()
 	{
 		int v = 0;
@@ -1609,7 +1334,7 @@ public:
 		}
 
 		//start_routes_positions = m.start_routes_positions;
-		age = m.age;
+		//age = m.age;
 
 		return *this;
 	}
@@ -1656,7 +1381,7 @@ private:
 	//set che indica le posizioni di partenza in ordine crescente delle rotte all'interno del cromosoma
 	//std::set<unsigned> start_routes_positions;
 	//std::mt19937 &mt;
-	unsigned age;
+	//unsigned age;
 };
 
 #endif
