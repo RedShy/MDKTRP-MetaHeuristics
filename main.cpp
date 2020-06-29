@@ -57,7 +57,7 @@ int main(int argc, char **argv)
         //best = ES_mu_comma_lambda(depots, customers, vehicles, distance_matrix, 500000, 15, 300);
         break;
     case 3:
-        GA(depots, customers, vehicles, distance_matrix, 500000, 100, 4);
+        //GA(depots, customers, vehicles, distance_matrix, 500000, 100, 4);
         break;
     case 4:
         //benchmark test
@@ -67,12 +67,12 @@ int main(int argc, char **argv)
         best = ES_mu_plus_lambda_adaptive(depots, customers, vehicles, distance_matrix, 50000, 15, 250);
         break;
     case 6:
-        std::cout<<"(mu+lambda)-ES\n";
+        std::cout << "(mu+lambda)-ES\n";
         for (unsigned mut = 0; mut < 5; mut++)
         {
             for (unsigned cross = 0; cross < 6; cross++)
             {
-                best = ES_mu_plus_lambda(depots, customers, vehicles, distance_matrix, 700000, 15, 250, mut, cross);
+                best = ES_mu_plus_lambda(depots, customers, vehicles, distance_matrix, 350000, 15, 250, mut, cross);
                 string m;
                 switch (mut)
                 {
@@ -118,12 +118,12 @@ int main(int argc, char **argv)
             }
         }
     case 7:
-        std::cout<<"(mu,lambda)-ES\n";
+        std::cout << "(mu,lambda)-ES\n";
         for (unsigned mut = 0; mut < 5; mut++)
         {
             for (unsigned cross = 0; cross < 6; cross++)
             {
-                best = ES_mu_comma_lambda(depots, customers, vehicles, distance_matrix, 700000, 15, 250, mut, cross);
+                best = ES_mu_comma_lambda(depots, customers, vehicles, distance_matrix, 350000, 15, 250, mut, cross);
                 string m;
                 switch (mut)
                 {
@@ -169,14 +169,14 @@ int main(int argc, char **argv)
             }
         }
     case 8:
-        std::cout<<"(1+1)-ES\n";
+        std::cout << "(1+1)-ES\n";
         for (unsigned mut = 0; mut < 5; mut++)
         {
-            best = ES_1_1(depots, customers, vehicles, distance_matrix, 8750000, mut);
+            best = ES_1_1(depots, customers, vehicles, distance_matrix, 4375000, mut);
             double global_best = best;
             for (unsigned i = 1; i < 20; i++)
             {
-                best = ES_1_1(depots, customers, vehicles, distance_matrix, 8750000, mut);
+                best = ES_1_1(depots, customers, vehicles, distance_matrix, 4375000, mut);
                 if (best < global_best)
                 {
                     global_best = best;
@@ -203,6 +203,57 @@ int main(int argc, char **argv)
             }
             string c = "no_cross_over";
             std::cout << c << ":" << m << ":" << best << "\n";
+        }
+    case 9:
+        std::cout << "GA\n";
+        for (unsigned mut = 0; mut < 5; mut++)
+        {
+            for (unsigned cross = 0; cross < 5; cross++)
+            {
+                best = GA(depots, customers, vehicles, distance_matrix, 350000, 250, 4, mut, cross);
+                string m;
+                switch (mut)
+                {
+                case 0:
+                    m = "swap2";
+                    break;
+                case 1:
+                    m = "swap3";
+                    break;
+                case 2:
+                    m = "scrumble";
+                    break;
+                case 3:
+                    m = "inversion";
+                    break;
+                case 4:
+                    m = "insertion";
+                    break;
+                }
+                string c;
+                switch (cross)
+                {
+                case 0:
+                    c = "one_point_cross_over";
+                    break;
+                case 1:
+                    c = "two_point_cross_over";
+                    break;
+                case 2:
+                    c = "best_order_cross_over";
+                    break;
+                case 3:
+                    c = "position_based_cross_over";
+                    break;
+                case 4:
+                    c = "uniform_cross_over";
+                    break;
+                case 5:
+                    c = "no_cross_over";
+                    break;
+                }
+                std::cout << c << ":" << m << ":" << best << "\n";
+            }
         }
     }
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
