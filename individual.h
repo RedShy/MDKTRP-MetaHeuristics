@@ -508,8 +508,7 @@ public:
 		while (p1 < N && tours[p1] >= depots)
 		{
 			len++;
-			//è possibile memorizzare le latenze di tutti gli archi del tour anziché accedere alla matrice
-			//verrebbe comunque fatto almeno una volta, non so che vantaggi ci sarebbero
+
 			p1++;
 		}
 
@@ -740,6 +739,8 @@ public:
 			len_1 = cutting_point_1 - 0;
 		}
 
+		cout<<"len: "<<len_1<<" J/3: "<<J/3<<"\n";
+
 		//scegliamo una modalità per la sequenza
 		std::uniform_int_distribution<unsigned> random_value_sequence(0, 2);
 		const unsigned value_sequence = random_value_sequence(mt);
@@ -815,10 +816,9 @@ public:
 			}
 		}
 
-		std::uniform_int_distribution<unsigned> n_random(2, J - 1);
-		//const unsigned n_cutting_points = n_random(mt);
-
-		unsigned n_cutting_points = 2;
+		//std::uniform_int_distribution<unsigned> n_random(2, J - 1);
+		std::uniform_int_distribution<unsigned> n_random(2, 3);
+		const unsigned n_cutting_points = n_random(mt);
 
 		unsigned last_cutting_point = cutting_point_1;
 		for (unsigned i = 1; i < n_cutting_points; i++)
@@ -828,8 +828,10 @@ public:
 			unsigned len = next_cutting_point - last_cutting_point;
 			while (next_cutting_point <= last_cutting_point || len > J / 3)
 			{
+				
 				next_cutting_point = random_cutting_point(mt);
 				len = next_cutting_point - last_cutting_point;
+				//cout<<"next: "<<next_cutting_point<<" last: "<<last_cutting_point<<"\n";
 			}
 
 			//scegli una modalità

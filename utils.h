@@ -127,7 +127,7 @@ void read_file_cordeau(string file, int &depots, int &vehicles, int &customers, 
 	//print_matrix(coordinate_matrix, depots + customers, 2);
 }
 
-void read_file_ruiz(string file, int &depots, int &customers, double **&coordinate_matrix)
+void read_file_ruiz(string file, unsigned &depots, unsigned &customers, double **&coordinate_matrix)
 {
 	ifstream instance;
 	instance.open(file);
