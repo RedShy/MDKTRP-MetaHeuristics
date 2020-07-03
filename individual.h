@@ -488,11 +488,10 @@ public:
 	{
 		//fa un tot di tentativi con insertion
 		unsigned tries = 0;
-		while(tries < 5 && !insertion())
+		while (tries < 5 && !insertion())
 		{
 			tries++;
 		}
-
 
 		//sanity_check();
 	}
@@ -730,21 +729,15 @@ public:
 		}
 
 		//scelgo il primo cutting point
-		std::uniform_int_distribution<unsigned> random_cutting_point(1, J - 2);
-		unsigned cutting_point_1 = random_cutting_point(mt);
-		unsigned len_1 = cutting_point_1 - 0;
-		while (len_1 > J / 3)
-		{
-			cutting_point_1 = random_cutting_point(mt);
-			len_1 = cutting_point_1 - 0;
-		}
+		std::uniform_int_distribution<unsigned> len_random_cutting_point(1, J / 3);
+		unsigned len_1 = len_random_cutting_point(mt);
+		unsigned cutting_point_1 = 0 + len_1;
 
-		cout<<"len: "<<len_1<<" J/3: "<<J/3<<"\n";
+		//cout << "len: " << len_1 << " J/3: " << J / 3 << "\n";
 
 		//scegliamo una modalità per la sequenza
 		std::uniform_int_distribution<unsigned> random_value_sequence(0, 2);
 		const unsigned value_sequence = random_value_sequence(mt);
-
 		unsigned v = 0;
 		if (value_sequence == 0)
 		{
@@ -816,23 +809,11 @@ public:
 			}
 		}
 
-		//std::uniform_int_distribution<unsigned> n_random(2, J - 1);
-		std::uniform_int_distribution<unsigned> n_random(2, 3);
-		const unsigned n_cutting_points = n_random(mt);
-
 		unsigned last_cutting_point = cutting_point_1;
-		for (unsigned i = 1; i < n_cutting_points; i++)
+		unsigned len_before_end = J - last_cutting_point;
+		while (len_before_end > J / 3)
 		{
-			//scegli un nuovo cutting point in modo opportuno
-			unsigned next_cutting_point = random_cutting_point(mt);
-			unsigned len = next_cutting_point - last_cutting_point;
-			while (next_cutting_point <= last_cutting_point || len > J / 3)
-			{
-				
-				next_cutting_point = random_cutting_point(mt);
-				len = next_cutting_point - last_cutting_point;
-				//cout<<"next: "<<next_cutting_point<<" last: "<<last_cutting_point<<"\n";
-			}
+			unsigned next_cutting_point = last_cutting_point + len_random_cutting_point(mt);
 
 			//scegli una modalità
 			const unsigned value_sequence = random_value_sequence(mt);
@@ -907,10 +888,12 @@ public:
 			}
 
 			last_cutting_point = next_cutting_point;
+			len_before_end = J - last_cutting_point;
 		}
 
-		const unsigned value_sequence3 = random_value_sequence(mt);
-		if (value_sequence3 == 0)
+		//operiamo sull'ultimo tratto del cromosoma
+		const unsigned end_sequence_value = random_value_sequence(mt);
+		if (end_sequence_value == 0)
 		{
 			//copia interamente la sequenza dal genitore principale
 			for (unsigned i = last_cutting_point; i < J; i++)
@@ -1380,7 +1363,6 @@ private:
 	const double *const *const distance_matrix;
 	// è un array di n_veicoli elementi che indica dove si trovano i depot associati ai veicoli all'interno del cromosoma
 	unsigned *depot_positions;
-
 };
 
 #endif
