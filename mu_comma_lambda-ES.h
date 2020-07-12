@@ -348,7 +348,7 @@ double ES_mu_comma_lambda_adaptive(const unsigned depots, const unsigned custome
             }
             else
             {
-                //children_a[i].insertion();
+                children_a[i].insertion();
             }
 
             children_a[i].calculate_cost();
@@ -445,7 +445,7 @@ double ES_mu_comma_lambda_adaptive(const unsigned depots, const unsigned custome
             }
             else
             {
-                //child.insertion();
+                child.insertion();
             }
 
             child.calculate_cost();

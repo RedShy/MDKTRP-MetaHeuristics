@@ -96,7 +96,7 @@ double ES_1_1_adaptive(const unsigned depots, const unsigned customers, const un
         }
         else
         {
-            //child.insertion();
+            child.insertion();
         }
 
         child.calculate_cost();

@@ -259,7 +259,7 @@ double ES_mu_plus_lambda_adaptive(const unsigned depots, const unsigned customer
             }
             else
             {
-                //child.insertion();
+                child.insertion();
             }
 
             child.calculate_cost();
