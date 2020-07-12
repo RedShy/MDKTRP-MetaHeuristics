@@ -43,7 +43,7 @@ double GA(const unsigned depots, const unsigned customers, const unsigned vehicl
     unsigned g = 0;
     while (g < max_g)
     {
-        cout<<"G: "<<g<<"\n";
+        //cout<<"G: "<<g<<"\n";
         const std::vector<Individual> &individuals_a = *individuals_p;
         std::vector<Individual> &new_generation_a = *new_generation_p;
 
