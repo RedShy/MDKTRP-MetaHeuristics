@@ -8,8 +8,18 @@
 #include <chrono>
 
 //RANDOM STUFF
-std::random_device rd;
-std::mt19937 mt(rd());
+size_t sysrandom(void* dst, size_t dstlen)
+{
+    char* buffer = reinterpret_cast<char*>(dst);
+    std::ifstream stream("/dev/urandom", std::ios_base::binary | std::ios_base::in);
+    stream.read(buffer, dstlen);
+
+    return dstlen;
+}
+
+std::uint_least64_t seed(11363585407706497491);     
+//size_t a = sysrandom(&seed, sizeof(seed));
+std::mt19937 mt(seed);
 
 class Individual
 {
